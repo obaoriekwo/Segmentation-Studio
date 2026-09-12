@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Customer Segmentation App</title>
+
+  <!-- External libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- App stylesheet (inlined) -->
+  <style>
+/* ============================================================
+   Customer Segmentation Studio — styles.css
+   ============================================================ */
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── CSS Variables ── */
+:root {
+  --bg:       #0f1117;
+  --surface:  #1a1d27;
+  --surface2: #22263a;
+  --border:   #2e3250;
+
+  --accent:  #6c63ff;
+  --accent2: #ff6b9d;
+  --accent3: #43e0a6;
+  --accent4: #ffd166;
+
+  --text:  #e8eaf6;
+  --muted: #8890b0;
+  --white: #fff;
+
+  --a: rgba(108, 99,  255, 0.15);
+  --b: rgba(255, 107, 157, 0.15);
+  --c: rgba(67,  224, 166, 0.15);
+  --d: rgba(255, 209, 102, 0.15);
+}
+
+/* ── Base ── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(135deg, #1a1d27, #22263a);
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+header .logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+header p {
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+.badge {
+  background: rgba(108, 99, 255, .2);
+  color: var(--accent);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* ── Layout ── */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 73px);
+}
+
+/* ── Sidebar Nav ── */
+nav {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+}
+
+nav h3 {
+  font-size: .65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: .75rem;
+  padding-left: .5rem;
+}
+
+nav ul {
+  list-style: none;
+  margin-bottom: 1.5rem;
+}
+
+nav li a {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .75rem;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .85rem;
+  transition: .2s;
+  cursor: pointer;
+}
+
+nav li a:hover,
+nav li a.active {
+  background: rgba(108, 99, 255, .15);
+  color: var(--accent);
+}
+
+nav li a .icon {
+  font-size: 1rem;
+  width: 18px;
+  text-align: center;
+}
+
+/* ── Main Content ── */
+main {
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── Grids ── */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── KPI Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.card h3 {
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: .35rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.card .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.card .sub {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: .2rem;
+}
+
+/* ── Chart Cards ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.chart-card h4 {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Segment Pills ── */
+.seg-pills {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.pill {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  opacity: .6;
+  transition: .2s;
+}
+
+.pill.active { opacity: 1; }
+
+.pill-a   { background: rgba(108, 99,  255, .25); color: var(--accent);  }
+.pill-b   { background: rgba(255, 107, 157, .25); color: var(--accent2); }
+.pill-c   { background: rgba(67,  224, 166, .25); color: var(--accent3); }
+.pill-d   { background: rgba(255, 209, 102, .25); color: var(--accent4); }
+.pill-all { background: rgba(255, 255, 255, .1);  color: var(--text);    }
+
+/* ── Segment Profile Cards ── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-card {
+  border-radius: 14px;
+  padding: 1.25rem;
+  border: 1px solid;
+}
+
+.profile-card h4 {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+  margin-bottom: .75rem;
+  opacity: .8;
+}
+
+.profile-card .stat       { margin-bottom: .5rem; }
+.profile-card .stat-label { font-size: .7rem; opacity: .6; margin-bottom: .1rem; }
+.profile-card .stat-value { font-size: .9rem; font-weight: 600; }
+
+.pc-a { background: rgba(108, 99,  255, .08); border-color: rgba(108, 99,  255, .3); color: var(--accent);  }
+.pc-b { background: rgba(255, 107, 157, .08); border-color: rgba(255, 107, 157, .3); color: var(--accent2); }
+.pc-c { background: rgba(67,  224, 166, .08); border-color: rgba(67,  224, 166, .3); color: var(--accent3); }
+.pc-d { background: rgba(255, 209, 102, .08); border-color: rgba(255, 209, 102, .3); color: var(--accent4); }
+
+/* ── Section Titles ── */
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: .25rem;
+}
+
+.section-sub {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Predictor Form ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: .75rem;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: .55rem .75rem;
+  font-size: .85rem;
+  outline: none;
+  transition: .2s;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  border-color: var(--accent);
+}
+
+.predict-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .75rem 2rem;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .2s;
+  width: 100%;
+}
+
+.predict-btn:hover {
+  opacity: .9;
+  transform: translateY(-1px);
+}
+
+/* ── Prediction Result Box ── */
+.result-box {
+  margin-top: 1.25rem;
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: none;
+  text-align: center;
+}
+
+.result-box .seg-label { font-size: 3rem;  font-weight: 800; margin-bottom: .5rem; }
+.result-box .seg-name  { font-size: 1rem;  font-weight: 600; margin-bottom: .5rem; }
+.result-box .seg-desc  { font-size: .8rem; opacity: .7; }
+
+/* ── CSV Upload Zone ── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  transition: .2s;
+}
+
+.upload-zone:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.upload-zone input  { display: none; }
+.upload-zone label  { cursor: pointer; display: block; }
+
+/* ── Data Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+}
+
+table thead th {
+  background: var(--surface2);
+  padding: .6rem 1rem;
+  text-align: left;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+table tbody tr  { border-bottom: 1px solid var(--border); }
+table tbody td  { padding: .6rem 1rem; color: var(--text); }
+table tbody tr:hover { background: rgba(255, 255, 255, .03); }
+
+.seg-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.tag-a { background: rgba(108, 99,  255, .2); color: var(--accent);  }
+.tag-b { background: rgba(255, 107, 157, .2); color: var(--accent2); }
+.tag-c { background: rgba(67,  224, 166, .2); color: var(--accent3); }
+.tag-d { background: rgba(255, 209, 102, .2); color: var(--accent4); }
+
+/* ── Behavioral Insight Cards ── */
+.insight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.insight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.insight-card h4 {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .75rem;
+}
+
+.insight-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .8rem;
+}
+
+.insight-item:last-child { border: none; }
+.insight-item .label     { color: var(--muted); }
+.insight-item .val       { font-weight: 600; color: var(--white); }
+
+.bar-mini {
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Responsive breakpoints
+   ============================================================ */
+
+/* ── Tablet (≤ 1024px): tighten grids before full stacking ── */
+@media (max-width: 1024px) {
+  .grid4       { grid-template-columns: repeat(2, 1fr); }
+  .profile-grid{ grid-template-columns: repeat(2, 1fr); }
+  .grid3       { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Mobile (≤ 768px): collapse sidebar into a top bar, stack everything ── */
+@media (max-width: 768px) {
+  header {
+    padding: 1rem 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.15rem; }
+  header p  { font-size: .72rem; }
+
+  .badge {
+    margin-left: 0;
+    order: 1;
+    width: 100%;
+    text-align: center;
+    margin-top: .5rem;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sidebar becomes a horizontal, scrollable strip above the content */
+  nav {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: .75rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  nav h3 { display: none; }
+
+  nav ul {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: .4rem;
+    margin-bottom: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav li a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: .5rem .7rem;
+    font-size: .8rem;
+  }
+
+  main {
+    padding: 1.1rem;
+  }
+
+  .grid2,
+  .grid3,
+  .grid4,
+  .profile-grid,
+  .insight-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card .value {
+    font-size: 1.5rem;
+  }
+
+  .chart-card [style*="height:320px"],
+  .chart-card [style*="height:300px"] {
+    height: 260px !important;
+  }
+
+  .chart-card [style*="height:280px"],
+  .chart-card [style*="height:260px"],
+  .chart-card [style*="height:240px"] {
+    height: 220px !important;
+  }
+
+  table { font-size: .72rem; }
+  table thead th,
+  table tbody td { padding: .45rem .6rem; }
+
+  .upload-zone { padding: 1.5rem 1rem; }
+}
+
+/* ── Small phones (≤ 420px) ── */
+@media (max-width: 420px) {
+  header {
+    padding: .85rem 1rem;
+  }
+
+  .logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  main { padding: .85rem; }
+
+  .card, .chart-card, .profile-card, .insight-card {
+    padding: 1rem;
+  }
+
+  .predict-btn {
+    padding: .65rem 1rem;
+  }
+}
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     HEADER
+════════════════════════════════════════ -->
+<header>
+  <div class="logo">📊</div>
+  <div>
+    <h1>Customer Segmentation Studio</h1>
+    <p>Train.csv — the only dataset with features + Segmentation labels</p>
+  </div>
+  <span class="badge">v1.0 · 8068 customers</span>
+</header>
+
+<!-- ════════════════════════════════════════
+     LAYOUT: Sidebar + Main
+════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- ── Sidebar Navigation ── -->
+  <nav>
+    <h3>Analysis</h3>
+    <ul>
+      <li><a class="active" onclick="show('overview', this)">
+        <span class="icon">📈</span>Overview</a></li>
+      <li><a onclick="show('segments', this)">
+        <span class="icon">🎯</span>Segments</a></li>
+      <li><a onclick="show('demographics', this)">
+        <span class="icon">👥</span>Demographics</a></li>
+      <li><a onclick="show('behavior', this)">
+        <span class="icon">💡</span>Behavior</a></li>
+    </ul>
+
+    <h3>Tools</h3>
+    <ul>
+      <li><a onclick="show('predictor', this)">
+        <span class="icon">🔮</span>Predict Segment</a></li>
+      <li><a onclick="show('uploader', this)">
+        <span class="icon">📁</span>Upload CSV</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Main Content ── -->
+  <main>
+
+    <!-- ════════════════
+         OVERVIEW
+    ════════════════ -->
+    <div id="overview" class="section active">
+      <div class="section-title">Overview Dashboard</div>
+      <div class="section-sub">Summary of the Train dataset used for customer segmentation analysis</div>
+
+      <div class="card" style="margin-bottom:1.25rem; border-left:3px solid var(--accent4);">
+        <h3>Model Performance (Random Forest, 200 trees)</h3>
+        <div class="value" style="font-size:1.3rem;">49.3% test accuracy</div>
+        <div class="sub">
+          A genuinely hard 4-class problem — segments overlap heavily in the feature space
+          (see the confusion matrix and full methodology in <code>Analysis.ipynb</code>).
+          Every chart and the segment predictor on this dashboard are computed directly from
+          <code>Train.csv</code>, not illustrative placeholder data.
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid4">
+        <div class="card">
+          <h3>Total Customers</h3>
+          <div class="value">8,068</div>
+          <div class="sub">Train.csv records</div>
+        </div>
+        <div class="card">
+          <h3>Features</h3>
+          <div class="value">9</div>
+          <div class="sub">Input variables</div>
+        </div>
+        <div class="card">
+          <h3>Segments</h3>
+          <div class="value">4</div>
+          <div class="sub">A, B, C, D</div>
+        </div>
+        <div class="card">
+          <h3>Largest Segment</h3>
+          <div class="value">D</div>
+          <div class="sub">~30% of customers</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="grid2">
+        <div class="chart-card">
+          <h4>Segment Distribution</h4>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="segPie" role="img" aria-label="Pie chart of customer segments A B C D">
+              Segments A B C D
+            </canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4>Age Distribution by Segment</h4>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="ageBox" role="img" aria-label="Bar chart of average age per segment">
+              Average age per segment
+            </canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="grid2">
+        <div class="chart-card">
+          <h4>Gender Split per Segment</h4>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="genderBar" role="img" aria-label="Grouped bar chart of gender by segment">
+              Gender by segment
+            </canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4>Spending Score Distribution</h4>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="spendBar" role="img" aria-label="Spending score categories by segment">
+              Spending score by segment
+            </canvas>
+          </div>
+        </div>
+      </div>
+    </div><!-- /overview -->
+
+
+    <!-- ════════════════
+         SEGMENTS
+    ════════════════ -->
+    <div id="segments" class="section">
+      <div class="section-title">Segment Profiles</div>
+      <div class="section-sub">Detailed breakdown of each customer segment's characteristics</div>
+
+      <div class="profile-grid">
+        <div class="profile-card pc-a">
+          <h4>Segment A</h4>
+          <div class="stat"><div class="stat-label">Avg Age</div><div class="stat-value">44.9 yrs</div></div>
+          <div class="stat"><div class="stat-label">Avg Work Exp.</div><div class="stat-value">2.9 yrs</div></div>
+          <div class="stat"><div class="stat-label">Family Size</div><div class="stat-value">2.4</div></div>
+          <div class="stat"><div class="stat-label">Top Profession</div><div class="stat-value">Artist</div></div>
+          <div class="stat"><div class="stat-label">Graduated</div><div class="stat-value">62%</div></div>
+        </div>
+        <div class="profile-card pc-b">
+          <h4>Segment B</h4>
+          <div class="stat"><div class="stat-label">Avg Age</div><div class="stat-value">48.2 yrs</div></div>
+          <div class="stat"><div class="stat-label">Avg Work Exp.</div><div class="stat-value">2.4 yrs</div></div>
+          <div class="stat"><div class="stat-label">Family Size</div><div class="stat-value">2.7</div></div>
+          <div class="stat"><div class="stat-label">Top Profession</div><div class="stat-value">Artist</div></div>
+          <div class="stat"><div class="stat-label">Graduated</div><div class="stat-value">72%</div></div>
+        </div>
+        <div class="profile-card pc-c">
+          <h4>Segment C</h4>
+          <div class="stat"><div class="stat-label">Avg Age</div><div class="stat-value">49.1 yrs</div></div>
+          <div class="stat"><div class="stat-label">Avg Work Exp.</div><div class="stat-value">2.2 yrs</div></div>
+          <div class="stat"><div class="stat-label">Family Size</div><div class="stat-value">3.0</div></div>
+          <div class="stat"><div class="stat-label">Top Profession</div><div class="stat-value">Artist</div></div>
+          <div class="stat"><div class="stat-label">Graduated</div><div class="stat-value">82%</div></div>
+        </div>
+        <div class="profile-card pc-d">
+          <h4>Segment D</h4>
+          <div class="stat"><div class="stat-label">Avg Age</div><div class="stat-value">33.4 yrs</div></div>
+          <div class="stat"><div class="stat-label">Avg Work Exp.</div><div class="stat-value">3.0 yrs</div></div>
+          <div class="stat"><div class="stat-label">Family Size</div><div class="stat-value">3.2</div></div>
+          <div class="stat"><div class="stat-label">Top Profession</div><div class="stat-value">Healthcare</div></div>
+          <div class="stat"><div class="stat-label">Graduated</div><div class="stat-value">36%</div></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Segment Radar — Normalised Feature Comparison</h4>
+        <div class="chart-wrap" style="height:320px">
+          <canvas id="radarChart" role="img"
+            aria-label="Radar chart comparing segments across age, work experience, family size">
+            Radar comparison
+          </canvas>
+        </div>
+      </div>
+    </div><!-- /segments -->
+
+
+    <!-- ════════════════
+         DEMOGRAPHICS
+    ════════════════ -->
+    <div id="demographics" class="section">
+      <div class="section-title">Demographics Analysis</div>
+      <div class="section-sub">How age, gender, education, and marital status vary across segments</div>
+
+      <div class="grid2">
+        <div class="chart-card">
+          <h4>Age Groups per Segment</h4>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="ageGroup" role="img" aria-label="Stacked bar of age groups per segment">
+              Age groups by segment
+            </canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4>Graduation Status by Segment</h4>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="gradBar" role="img" aria-label="Graduation rate per segment">
+              Graduation by segment
+            </canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="chart-card">
+          <h4>Marital Status by Segment</h4>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="marriedBar" role="img" aria-label="Marital status by segment">
+              Married by segment
+            </canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4>Family Size Distribution</h4>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="familyBar" role="img" aria-label="Family size distribution">
+              Family size
+            </canvas>
+          </div>
+        </div>
+      </div>
+    </div><!-- /demographics -->
+
+
+    <!-- ════════════════
+         BEHAVIOR
+    ════════════════ -->
+    <div id="behavior" class="section">
+      <div class="section-title">Behavioral Insights</div>
+      <div class="section-sub">Profession, work experience, and spending patterns by segment</div>
+
+      <div class="chart-card" style="margin-bottom:1.25rem">
+        <h4>Top Professions per Segment</h4>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="profChart" role="img" aria-label="Profession distribution by segment">
+            Professions by segment
+          </canvas>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="chart-card">
+          <h4>Work Experience (years)</h4>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="workChart" role="img" aria-label="Work experience by segment">
+              Work exp
+            </canvas>
+          </div>
+        </div>
+
+        <div class="insight-grid">
+          <div class="insight-card">
+            <h4>Key Insights — Segment A</h4>
+            <div class="insight-item"><span class="label">Modal Spending</span><span class="val">Low (69%)</span></div>
+            <div class="insight-item"><span class="label">Married</span><span class="val">58%</span></div>
+            <div class="insight-item"><span class="label">Graduated</span><span class="val">62%</span></div>
+            <div class="insight-item"><span class="label">Top Profession</span><span class="val">Artist (29%)</span></div>
+          </div>
+          <div class="insight-card">
+            <h4>Key Insights — Segment B</h4>
+            <div class="insight-item"><span class="label">Modal Spending</span><span class="val">Low (48%)</span></div>
+            <div class="insight-item"><span class="label">Married</span><span class="val">73%</span></div>
+            <div class="insight-item"><span class="label">Graduated</span><span class="val">72%</span></div>
+            <div class="insight-item"><span class="label">Top Profession</span><span class="val">Artist (41%)</span></div>
+          </div>
+          <div class="insight-card">
+            <h4>Key Insights — Segment C</h4>
+            <div class="insight-item"><span class="label">Modal Spending</span><span class="val">Average (46%)</span></div>
+            <div class="insight-item"><span class="label">Married</span><span class="val">79%</span></div>
+            <div class="insight-item"><span class="label">Graduated</span><span class="val">82%</span></div>
+            <div class="insight-item"><span class="label">Top Profession</span><span class="val">Artist (55%)</span></div>
+          </div>
+          <div class="insight-card">
+            <h4>Key Insights — Segment D</h4>
+            <div class="insight-item"><span class="label">Modal Spending</span><span class="val">Low (87%)</span></div>
+            <div class="insight-item"><span class="label">Married</span><span class="val">27%</span></div>
+            <div class="insight-item"><span class="label">Graduated</span><span class="val">36%</span></div>
+            <div class="insight-item"><span class="label">Top Profession</span><span class="val">Healthcare (44%)</span></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /behavior -->
+
+
+    <!-- ════════════════
+         PREDICTOR
+    ════════════════ -->
+    <div id="predictor" class="section">
+      <div class="section-title">Predict Customer Segment</div>
+      <div class="section-sub">Enter customer attributes to predict which segment they belong to</div>
+
+      <div class="chart-card" style="max-width:640px">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="f-gender">Gender</label>
+            <select id="f-gender"><option>Male</option><option>Female</option></select>
+          </div>
+          <div class="form-group">
+            <label for="f-married">Ever Married</label>
+            <select id="f-married"><option>Yes</option><option>No</option></select>
+          </div>
+          <div class="form-group">
+            <label for="f-age">Age</label>
+            <input type="number" id="f-age" value="35" min="18" max="90"/>
+          </div>
+          <div class="form-group">
+            <label for="f-grad">Graduated</label>
+            <select id="f-grad"><option>Yes</option><option>No</option></select>
+          </div>
+          <div class="form-group">
+            <label for="f-prof">Profession</label>
+            <select id="f-prof">
+              <option>Artist</option>
+              <option>Doctor</option>
+              <option>Engineer</option>
+              <option>Entertainment</option>
+              <option>Executive</option>
+              <option>Healthcare</option>
+              <option>Homemaker</option>
+              <option>Lawyer</option>
+              <option>Marketing</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-work">Work Experience (yrs)</label>
+            <input type="number" id="f-work" value="3" min="0" max="30"/>
+          </div>
+          <div class="form-group">
+            <label for="f-spend">Spending Score</label>
+            <select id="f-spend"><option>Low</option><option>Average</option><option>High</option></select>
+          </div>
+          <div class="form-group">
+            <label for="f-family">Family Size</label>
+            <input type="number" id="f-family" value="3" min="1" max="9"/>
+          </div>
+        </div>
+
+        <button class="predict-btn" onclick="predictSegment()">🔮 Predict Segment</button>
+
+        <div id="result-box" class="result-box">
+          <div id="result-seg"  class="seg-label"></div>
+          <div id="result-name" class="seg-name"></div>
+          <div id="result-desc" class="seg-desc"></div>
+        </div>
+      </div>
+    </div><!-- /predictor -->
+
+
+    <!-- ════════════════
+         UPLOADER
+    ════════════════ -->
+    <div id="uploader" class="section">
+      <div class="section-title">Upload Your CSV</div>
+      <div class="section-sub">Upload Train.csv (or any segmentation CSV) for a live data preview</div>
+
+      <div class="upload-zone">
+        <label for="csvFile">
+          <div style="font-size:2.5rem; margin-bottom:.75rem">📂</div>
+          <div style="font-weight:600; margin-bottom:.35rem">Click to upload CSV</div>
+          <div style="font-size:.8rem">Supports Train.csv, Test.csv, sample_submission.csv</div>
+          <input type="file" id="csvFile" accept=".csv" onchange="handleCSV(event)"/>
+        </label>
+      </div>
+
+      <div id="table-wrap" style="overflow-x:auto; display:none">
+        <div id="csv-info" style="font-size:.8rem; color:var(--muted); margin-bottom:.75rem"></div>
+        <table id="csv-table">
+          <thead id="t-head"></thead>
+          <tbody id="t-body"></tbody>
+        </table>
+      </div>
+    </div><!-- /uploader -->
+
+  </main>
+</div><!-- /layout -->
+
+<!-- App logic (inlined) -->
+<script>
+/* Real, computed-from-Train.csv data — see Analysis.ipynb for the full methodology. */
+const REAL_DATA = {"segment_counts": [1972, 1858, 1970, 2268], "avg_age": [44.9, 48.2, 49.1, 33.4], "avg_work_exp": [2.9, 2.4, 2.2, 3.0], "gender_male_pct": [53.9, 53.7, 53.2, 57.7], "gender_female_pct": [46.1, 46.3, 46.8, 42.3], "spend_low": [68.9, 47.6, 33.6, 87.0], "spend_avg": [17.4, 31.8, 45.8, 6.1], "spend_high": [13.7, 20.7, 20.6, 6.9], "grad_pct": [61.8, 71.7, 81.6, 35.7], "married_pct": [57.7, 72.6, 78.6, 26.9], "age_group_labels": ["18-25", "26-35", "36-45", "46-60", "60+"], "age_group_by_seg": {"A": [4.4, 27.2, 32.2, 18.9, 17.3], "B": [2.9, 15.7, 30.0, 30.9, 20.5], "C": [3.2, 15.0, 21.8, 38.9, 21.0], "D": [35.1, 36.2, 13.2, 6.6, 8.9]}, "family_labels": ["1", "2", "3", "4", "5", "6+"], "family_by_seg": {"A": [29.9, 33.1, 16.8, 11.7, 4.3, 4.2], "B": [20.0, 34.2, 18.2, 16.6, 7.5, 3.4], "C": [7.3, 40.2, 20.3, 20.3, 7.7, 4.2], "D": [18.4, 17.7, 21.7, 22.1, 11.6, 8.5]}, "profession_labels": ["Artist", "Doctor", "Engineer", "Entertainment", "Executive", "Healthcare", "Homemaker", "Lawyer", "Marketing"], "profession_by_seg": {"A": [28.8, 10.3, 13.4, 18.8, 6.4, 5.5, 3.8, 10.2, 2.9], "B": [41.2, 7.8, 10.3, 12.0, 10.0, 5.5, 3.0, 8.6, 1.6], "C": [54.6, 7.2, 3.8, 7.6, 9.0, 7.5, 1.4, 7.2, 1.8], "D": [6.2, 9.3, 7.9, 9.7, 5.2, 44.2, 4.1, 5.8, 7.7]}, "radar": {"Age": [73.2, 94.3, 100.0, 0.0], "WorkExp": [87.5, 25.0, 0.0, 100.0], "FamilySize": [0.0, 37.5, 75.0, 100.0], "Spending": [37.3, 79.1, 100.0, 0.0], "Graduation": [56.9, 78.4, 100.0, 0.0]}, "model_accuracy_pct": 49.3, "model_name": "Random Forest (200 trees)", "confusion_matrix": [[155, 97, 50, 92], [101, 130, 84, 57], [61, 89, 199, 45], [85, 36, 21, 312]], "centroids": {"A": {"age": 44.92, "work_exp": 2.87, "family_size": 2.44, "grad": 0.618, "married": 0.577, "spend": 1.449}, "B": {"age": 48.2, "work_exp": 2.38, "family_size": 2.7, "grad": 0.717, "married": 0.726, "spend": 1.731}, "C": {"age": 49.14, "work_exp": 2.24, "family_size": 2.97, "grad": 0.816, "married": 0.786, "spend": 1.87}, "D": {"age": 33.39, "work_exp": 3.02, "family_size": 3.23, "grad": 0.357, "married": 0.269, "spend": 1.198}}, "feature_stds": {"age": 16.71, "work_exp": 3.41, "family_size": 1.53, "grad": 0.486, "married": 0.494, "spend": 0.741}, "top_profession_by_seg": {"A": "Artist", "B": "Artist", "C": "Artist", "D": "Healthcare"}};
+
+</script>
+<script>
+/* ============================================================
+   Customer Segmentation Studio — app.js
+   All chart data below comes from REAL_DATA (data.js), which is
+   computed directly from Train.csv — see Analysis.ipynb for the
+   full methodology (KMeans + PCA, Random Forest classifier,
+   49.3% test accuracy on this genuinely hard 4-class problem).
+   ============================================================ */
+
+/* ── Navigation ── */
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav li a').forEach(a => a.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ── Constants ── */
+const COLORS = ['#6c63ff', '#ff6b9d', '#43e0a6', '#ffd166'];
+const SEGS   = ['A', 'B', 'C', 'D'];
+const D = REAL_DATA;
+
+/* ── Chart Factory ── */
+function mkChart(id, type, labels, datasets, opts = {}) {
+  const ctx = document.getElementById(id).getContext('2d');
+  new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#8890b0', font: { size: 11 } } },
+        tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3250', borderWidth: 1 }
+      },
+      scales:
+        type === 'radar'
+          ? {
+              r: {
+                ticks:       { color: '#8890b0', backdropColor: 'transparent' },
+                grid:        { color: '#2e3250' },
+                pointLabels: { color: '#e8eaf6', font: { size: 11 } }
+              }
+            }
+          : (type === 'pie' || type === 'doughnut')
+            ? {}
+            : {
+                x: { ticks: { color: '#8890b0' }, grid: { color: '#2e3250' } },
+                y: { ticks: { color: '#8890b0' }, grid: { color: '#2e3250' } }
+              },
+      ...opts
+    }
+  });
+}
+
+/* ── Initialise All Charts on Load (real data from Train.csv) ── */
+window.addEventListener('load', () => {
+
+  /* Segment doughnut — real counts */
+  mkChart(
+    'segPie', 'doughnut', SEGS,
+    [{ data: D.segment_counts, backgroundColor: COLORS, borderColor: '#0f1117', borderWidth: 2 }],
+    { plugins: { legend: { position: 'right', labels: { color: '#8890b0' } } } }
+  );
+
+  /* Average age bar — real means */
+  mkChart('ageBox', 'bar', SEGS,
+    [{ label: 'Avg Age', data: D.avg_age, backgroundColor: COLORS, borderRadius: 6 }]
+  );
+
+  /* Gender grouped bar — real % */
+  mkChart('genderBar', 'bar', SEGS, [
+    { label: 'Male',   data: D.gender_male_pct,   backgroundColor: '#6c63ff', borderRadius: 4 },
+    { label: 'Female', data: D.gender_female_pct, backgroundColor: '#ff6b9d', borderRadius: 4 }
+  ], {
+    scales: {
+      x: { stacked: false, ticks: { color: '#8890b0' }, grid: { color: '#2e3250' } },
+      y: {                 ticks: { color: '#8890b0' }, grid: { color: '#2e3250' } }
+    }
+  });
+
+  /* Spending score grouped bar — real % per segment */
+  mkChart('spendBar', 'bar', ['Low', 'Average', 'High'], SEGS.map((s, i) => ({
+    label: s,
+    data: [D.spend_low[i], D.spend_avg[i], D.spend_high[i]],
+    backgroundColor: COLORS[i],
+    borderRadius: 4
+  })));
+
+  /* Radar chart — real per-segment values, each metric normalized 0-100
+     across segments (see data.js: REAL_DATA.radar) so the four segments
+     are visually comparable despite different original units. */
+  new Chart(document.getElementById('radarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: ['Age', 'Work Exp', 'Family Size', 'Spending', 'Graduation'],
+      datasets: SEGS.map((s, i) => ({
+        label: s,
+        data: [D.radar.Age[i], D.radar.WorkExp[i], D.radar.FamilySize[i], D.radar.Spending[i], D.radar.Graduation[i]],
+        borderColor: COLORS[i],
+        backgroundColor: COLORS[i] + '26',
+        pointBackgroundColor: COLORS[i]
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8890b0' } } },
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks:       { color: '#8890b0', backdropColor: 'transparent' },
+          grid:        { color: '#2e3250' },
+          pointLabels: { color: '#e8eaf6' }
+        }
+      }
+    }
+  });
+
+  /* Age groups — real % per segment */
+  mkChart('ageGroup', 'bar', D.age_group_labels, SEGS.map((s, i) => ({
+    label: s, data: D.age_group_by_seg[s], backgroundColor: COLORS[i], borderRadius: 4
+  })));
+
+  /* Graduation rate — real % */
+  mkChart('gradBar', 'bar', SEGS,
+    [{ label: 'Graduated', data: D.grad_pct, backgroundColor: COLORS, borderRadius: 6 }]
+  );
+
+  /* Marital status — real % */
+  mkChart('marriedBar', 'bar', SEGS,
+    [{ label: 'Married', data: D.married_pct, backgroundColor: COLORS, borderRadius: 6 }]
+  );
+
+  /* Family size distribution — real % per segment */
+  mkChart('familyBar', 'bar', D.family_labels, SEGS.map((s, i) => ({
+    label: s, data: D.family_by_seg[s], backgroundColor: COLORS[i], borderRadius: 4
+  })));
+
+  /* Professions — real % per segment, all 9 real categories */
+  mkChart('profChart', 'bar', D.profession_labels, SEGS.map((s, i) => ({
+    label: s, data: D.profession_by_seg[s], backgroundColor: COLORS[i], borderRadius: 4
+  })));
+
+  /* Work experience — real means */
+  mkChart('workChart', 'bar', SEGS,
+    [{ label: 'Avg Work Exp (yrs)', data: D.avg_work_exp, backgroundColor: COLORS, borderRadius: 6 }]
+  );
+});
+
+/* ── Segment Predictor ──
+   Nearest-centroid classifier grounded in the REAL per-segment averages
+   computed from Train.csv (REAL_DATA.centroids) — not hand-picked rules.
+   Each input feature is standardized by its population std dev
+   (REAL_DATA.feature_stds) so no single feature dominates the distance,
+   then we pick whichever segment's centroid is closest.
+
+   This is a simplified in-browser approximation, NOT the actual trained
+   Random Forest (which only runs in Python — see Analysis.ipynb, where it
+   scored 49.3% test accuracy on this genuinely hard 4-class problem). This
+   predictor exists to make the real segment differences tangible, not to
+   claim production-grade accuracy.
+── */
+function predictSegment() {
+  const age     = +document.getElementById('f-age').value;
+  const work    = +document.getElementById('f-work').value;
+  const family  = +document.getElementById('f-family').value;
+  const spend   = document.getElementById('f-spend').value;
+  const grad    = document.getElementById('f-grad').value;
+  const prof    = document.getElementById('f-prof').value;
+  const married = document.getElementById('f-married').value;
+
+  const spendNum = { Low: 1, Average: 2, High: 3 }[spend];
+  const gradNum = grad === 'Yes' ? 1 : 0;
+  const marriedNum = married === 'Yes' ? 1 : 0;
+
+  const input = { age, work_exp: work, family_size: family, grad: gradNum, married: marriedNum, spend: spendNum };
+  const stds = D.feature_stds;
+
+  let best = null, bestDist = Infinity;
+  for (const s of SEGS) {
+    const c = D.centroids[s];
+    let dist2 = 0;
+    for (const key of Object.keys(input)) {
+      const z = (input[key] - c[key]) / stds[key];
+      dist2 += z * z;
+    }
+    // Small bonus for matching the segment's real top profession —
+    // profession is a weak-but-real signal per the notebook's feature importance.
+    if (prof === D.top_profession_by_seg[s]) dist2 -= 0.15;
+
+    if (dist2 < bestDist) { bestDist = dist2; best = s; }
+  }
+  const seg = best;
+
+  /* Profile text reflects the REAL segment characteristics (see the
+     Overview tab / Analysis.ipynb), not invented personas. */
+  const profiles = {
+    A: { name: 'Segment A', desc: `Real profile: avg age ${D.avg_age[0]}, ${D.grad_pct[0]}% graduated, ${D.married_pct[0]}% married, most common profession ${D.top_profession_by_seg.A}.`, bg: 'rgba(108,99,255,.12)',  color: '#6c63ff' },
+    B: { name: 'Segment B', desc: `Real profile: avg age ${D.avg_age[1]}, ${D.grad_pct[1]}% graduated, ${D.married_pct[1]}% married, most common profession ${D.top_profession_by_seg.B}.`, bg: 'rgba(255,107,157,.12)', color: '#ff6b9d' },
+    C: { name: 'Segment C', desc: `Real profile: avg age ${D.avg_age[2]}, ${D.grad_pct[2]}% graduated, ${D.married_pct[2]}% married, most common profession ${D.top_profession_by_seg.C}.`, bg: 'rgba(67,224,166,.12)',  color: '#43e0a6' },
+    D: { name: 'Segment D', desc: `Real profile: avg age ${D.avg_age[3]}, ${D.grad_pct[3]}% graduated, ${D.married_pct[3]}% married, most common profession ${D.top_profession_by_seg.D}.`, bg: 'rgba(255,209,102,.12)', color: '#ffd166' }
+  };
+
+  const rb = document.getElementById('result-box');
+  rb.style.display    = 'block';
+  rb.style.background = profiles[seg].bg;
+  rb.style.borderTop  = '3px solid ' + profiles[seg].color;
+
+  document.getElementById('result-seg').textContent  = 'Segment ' + seg;
+  document.getElementById('result-seg').style.color  = profiles[seg].color;
+  document.getElementById('result-name').textContent = profiles[seg].name;
+  document.getElementById('result-desc').textContent = profiles[seg].desc +
+    ' (Nearest-centroid estimate from real training data — not the trained Random Forest itself, which runs in Python; see Analysis.ipynb.)';
+}
+
+/* ── CSV Uploader ── */
+function handleCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  Papa.parse(file, {
+    header: true,
+    complete: res => {
+      const data = res.data.filter(r => Object.values(r).some(v => v !== ''));
+      const cols = res.meta.fields;
+
+      document.getElementById('csv-info').textContent =
+        `${file.name} · ${data.length} rows · ${cols.length} columns`;
+
+      document.getElementById('t-head').innerHTML =
+        '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+      document.getElementById('t-body').innerHTML = data.slice(0, 50).map(row =>
+        '<tr>' + cols.map(c => {
+          const v = row[c] || '';
+          if (c === 'Segmentation') {
+            return `<td><span class="seg-tag tag-${v.toLowerCase()}">${v}</span></td>`;
+          }
+          return `<td>${v}</td>`;
+        }).join('') + '</tr>'
+      ).join('');
+
+      document.getElementById('table-wrap').style.display = 'block';
+    }
+  });
+}
+
+</script>
+
+</body>
+</html>
